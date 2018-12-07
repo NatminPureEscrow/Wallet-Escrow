@@ -1,7 +1,6 @@
 pragma solidity ^0.4.22;
 
-import "./NatminToken.sol";
-import "./ReceivableTokens.sol";
+import "./Ownable.sol";
 
 contract ERC223 {
 
@@ -26,7 +25,7 @@ contract EscrowWallet is Ownable {
 	using SafeMath for uint256;
 	
 	string 	private walletPassword;
-	uint256 public 	transactionID;
+	uint256 private	transactionID;
 
 	address public  tokenContractAddress; // Wallet currency/token address
 	address public  appContractAddress;
@@ -72,10 +71,12 @@ contract EscrowWallet is Ownable {
 		}
 	}
 
-	function updateTransactionID(uint256 _transID) public {
+	function updateTransactionID(uint256 _transID) public returns (bool) {
 		require(appContractAddress == msg.sender); // Can only be called from the app contract
 		require(transactionID == 0); // Requires the transaction ID to be 0, can only be updated once
+		require(_transID != 0);
 		transactionID = _transID;
+		return true;
 	}
 
 	// Checks the status of the transaction and pays the seller the required tokens
@@ -94,6 +95,9 @@ contract EscrowWallet is Ownable {
 		return true;
 	}
 
+	function getTransactionID() public view returns (uint256) {
+		return transactionID;
+	}
 
 	// Destroying the wallet and returns the contents to the owner
 	function destroyWallet(address _owner) public ownerOnly {
