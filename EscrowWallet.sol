@@ -11,39 +11,36 @@ contract EscrowWallet is Ownable {
 		require(_generalContractAddress != address(0));
 
 		settings = GeneralContract(_generalContractAddress);
-		transactionID = 0;
 	}
 
-	// Token fallback required for ERC20Standard standard
+	// Token fallback required for ERC223 standard
 	function tokenFallback(address _from, uint256 _value, bytes _data) public {
-		address _tokenAddress = settings.getSettingAddress('TokenContract');
-		require(msg.sender == _tokenAddress);
+		_from;
+		_value;
+		_data;
 	}
 
 	// Transfer function of the escrow wallet
-	function transfer(address _to, uint256 _amount) public returns (bool){
-		// To make sure the function is only called from the app contract or by the owner
-		address _transactionContractAddress = settings.getSettingAddress('TransactionContract');
-		require((msg.sender == _transactionContractAddress) || (msg.sender == contractOwner));
-		address _tokenAddress = settings.getSettingAddress('TokenContract');
+	function transfer(
+		string _ticker, 
+		address _to, 
+		uint256 _amount) public ownerOnly returns (bool) {	
+
+		address _tokenAddress = settings.getSettingAddress(_ticker);
 		ERC20Standard _tokenContract = ERC20Standard(_tokenAddress);
 		require(_tokenContract.transfer(_to, _amount));
+
 		return true;
 	}
 
-	// Returns the escrow wallet balance
-	function balance() public view returns (uint256) {
-		address _tokenAddress = settings.getSettingAddress('TokenContract');
-		ERC20Standard _tokenContract = ERC20Standard(_tokenAddress);
-		return _tokenContract.balanceOf(this);
+	function setGeneralContract(address _newGeneralContractAddress) public ownerOnly {
+		settings = GeneralContract(_newGeneralContractAddress);
 	}
 
-	// Destroying the wallet and returns the contents to the owner
-	function destroyWallet(address _owner) public ownerOnly {
-		address _tokenAddress = settings.getSettingAddress('TokenContract');
+	// Returns the escrow wallet balance
+	function balance(string _ticker) public view returns (uint256) {
+		address _tokenAddress = settings.getSettingAddress(_ticker);
 		ERC20Standard _tokenContract = ERC20Standard(_tokenAddress);
-		require(_tokenContract.balanceOf(this) <= 0);
-
-		selfdestruct(_owner);
+		return _tokenContract.balanceOf(this);
 	}
 }
